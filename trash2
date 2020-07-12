@@ -1,0 +1,63 @@
+#include <stdio.h>
+#include <string.h>
+
+int var = 0;
+char text[30];
+int len;
+
+int main()
+{
+  scanf("%s",text);
+  len = strlen(text)-1;
+
+  asm(
+  "movq len,%%r8 \n"  //dlugosc ciagu do r8
+  "movq len,%%r11 \n" //dlugosc do r11
+  "xorq %%rcx,%%rcx \n"  //zerowanie rejestrow rcx rbx r10
+  "xorq %%rbx,%%rbx \n"
+  "xorq %%r10,%%r10 \n"
+  "xorq %%rsi,%%rsi \n"
+  "movq $7,%%r12 \n"   //stala 7 do r12
+ 
+  "wpiszliczbe: \n"
+  "movq %%r8,%%r9 \n" //w r8 i r9 jest dlugosc
+
+  "cmpq $1,%%r9 \n" 
+  "je potega0 \n"
+  "cmpq $2,%%r9 \n" 
+  "je potega1 \n"
+
+  "movq $7,%%rax \n"
+
+  "potega:\n"         //funkcja ma zaladowac do rax odpowiedni mnoznik dla danej pozycji 10^i
+  "mulq %%r12 \n"     //rax razy 10 i wynik w rax       
+  "decq %%r9 \n"
+  "cmpq $2,%%r9 \n"    
+  "jg potega \n"      
+
+  "pominpotegowanie: \n"
+
+  "movb text(,%%rsi,1),%%bl \n"
+  "subb $'0',%%bl \n"  //zamienienie wczytanego znaku ascii na cyfre
+  "mulq %%rbx \n" //pomnozenie rax i rbx czyli wczytanego znaku wynik w rax wartosc*10^i
+  "addq %%rax,var \n"  //liczba wczytana ostatecznie w rcx bylo %0
+  "incq %%rsi \n"
+  "decq %%r8 \n"
+  "cmpq %%rsi,%%r11 \n"
+  "jg wpiszliczbe \n"
+
+  "potega0:\n"
+  "movq $1,%%rax \n"
+  "jmp pominpotegowanie \n"
+
+  "potega1: \n"
+  "movq $7,%%rax \n"
+  "jmp pominpotegowanie \n"
+  
+  :"=g"(var)//brak parametrow wyjsciowych
+  :"g"(&text)
+  :"%rax", "%rbx", "%rcx", "%rdx", "%rsi", "%r8", "%r9", "%r10", "%r11", "%r12"
+  );
+	
+	printf("%d",var);
+}
